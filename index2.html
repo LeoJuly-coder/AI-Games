@@ -1,0 +1,1218 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>🌾 像素农场</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Microsoft YaHei', sans-serif;
+            background: #1a1a2e;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 10px;
+        }
+
+        .game-wrapper {
+            display: flex;
+            gap: 15px;
+            max-width: 1400px;
+            width: 100%;
+            height: 95vh;
+        }
+
+        .game-container {
+            background: #0d1117;
+            border-radius: 12px;
+            padding: 15px;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            min-width: 0;
+        }
+
+        .game-title {
+            text-align: center;
+            color: #7cb342;
+            font-size: 18px;
+            margin-bottom: 10px;
+        }
+
+        .map-container {
+            background: #1a1a2e;
+            border-radius: 8px;
+            border: 3px solid #2d5016;
+            overflow: hidden;
+            flex: 1;
+            position: relative;
+            min-height: 400px;
+        }
+
+        #gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .bottom-toolbar {
+            display: flex;
+            gap: 6px;
+            margin-top: 10px;
+            padding: 8px;
+            background: #161b22;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+
+        .tool-btn {
+            padding: 6px 10px;
+            border: 2px solid #30363d;
+            background: #21262d;
+            color: #fff;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 11px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 2px;
+            min-width: 55px;
+        }
+
+        .tool-btn:hover { background: #30363d; }
+        .tool-btn.active { background: #e94560; border-color: #ff6b6b; }
+        .tool-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .tool-icon { font-size: 18px; }
+
+        .side-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            width: 280px;
+            height: 100%;
+        }
+
+        .panel-section {
+            background: #161b22;
+            padding: 10px;
+            border-radius: 8px;
+            color: #fff;
+            border: 1px solid #30363d;
+        }
+
+        .panel-section h3 {
+            color: #7cb342;
+            margin-bottom: 6px;
+            font-size: 12px;
+        }
+
+        .game-log {
+            background: #0d1117;
+            border: 1px solid #30363d;
+            border-radius: 6px;
+            padding: 8px;
+            height: 120px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+
+        .log-entry {
+            padding: 3px 6px;
+            margin: 2px 0;
+            border-radius: 3px;
+        }
+        .log-entry.success { color: #9ccc65; }
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.info { color: #74b9ff; }
+        .log-entry.warning { color: #fdcb6e; }
+        .log-entry.loot { color: #bb8fce; }
+
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 11px;
+        }
+
+        .info-item span:last-child { color: #7cb342; font-weight: bold; }
+
+        .selected-tool {
+            background: #0f3460;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            margin-top: 6px;
+        }
+
+        .character-preview {
+            background: #21262d;
+            border-radius: 6px;
+            padding: 8px;
+            text-align: center;
+        }
+
+        .character-sprite {
+            font-size: 36px;
+            position: relative;
+            display: inline-block;
+        }
+
+        .held-item {
+            position: absolute;
+            font-size: 18px;
+            right: -5px;
+            bottom: 0;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 8px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 5px 3px;
+            border: none;
+            background: #21262d;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .tab-btn.active { background: #7cb342; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+
+        .seed-grid, .shop-grid, .craft-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+
+        .seed-btn, .shop-item, .craft-item {
+            padding: 6px;
+            border: 1px solid #30363d;
+            background: #21262d;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+
+        .seed-btn:hover, .shop-item:hover, .craft-item:hover { background: #30363d; }
+        .seed-btn.active { background: #7cb342; }
+        .seed-btn:disabled, .shop-item.disabled, .craft-item.disabled { opacity: 0.5; }
+
+        .warehouse-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .warehouse-item {
+            background: #21262d;
+            padding: 5px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            cursor: pointer;
+        }
+
+        .warehouse-item:hover { background: #30363d; }
+        .warehouse-item.empty { color: #666; justify-content: center; cursor: default; }
+
+        .equipment-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 4px;
+        }
+
+        .equip-slot {
+            background: #21262d;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 10px;
+            border: 1px dashed #444;
+            cursor: pointer;
+        }
+
+        .equip-slot.has-item { border: 1px solid #7cb342; background: #1a2a1a; }
+
+        .help-text {
+            color: #888;
+            font-size: 10px;
+            margin-top: 6px;
+            text-align: center;
+        }
+
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: #21262d; }
+        ::-webkit-scrollbar-thumb { background: #444; }
+    </style>
+</head>
+<body>
+    <div class="game-wrapper">
+        <div class="game-container">
+            <h1 class="game-title">🌾 像素农场</h1>
+            <div class="map-container" id="mapContainer">
+                <canvas id="gameCanvas"></canvas>
+            </div>
+            
+            <div class="bottom-toolbar">
+                <button class="tool-btn" data-tool="plant" onclick="selectTool('plant')">
+                    <span class="tool-icon">🌱</span><span>种植</span>
+                </button>
+                <button class="tool-btn" data-tool="water" onclick="selectTool('water')">
+                    <span class="tool-icon">💧</span><span>浇水</span>
+                </button>
+                <button class="tool-btn" data-tool="fertilize" onclick="selectTool('fertilize')">
+                    <span class="tool-icon">⚡</span><span>施肥</span>
+                </button>
+                <button class="tool-btn" data-tool="harvest" onclick="selectTool('harvest')">
+                    <span class="tool-icon">🧺</span><span>收获</span>
+                </button>
+                <button class="tool-btn" data-tool="axe" onclick="selectTool('axe')" disabled>
+                    <span class="tool-icon">🪓</span><span>斧头</span>
+                </button>
+                <button class="tool-btn" data-tool="pickaxe" onclick="selectTool('pickaxe')" disabled>
+                    <span class="tool-icon">⛏️</span><span>镐子</span>
+                </button>
+                <button class="tool-btn" data-tool="sword" onclick="selectTool('sword')" disabled>
+                    <span class="tool-icon">⚔️</span><span>武器</span>
+                </button>
+                <button class="tool-btn" data-tool="fillWater" onclick="selectTool('fillWater')">
+                    <span class="tool-icon">🚰</span><span>打水</span>
+                </button>
+            </div>
+            
+            <p class="help-text">WASD移动 | 数字键1-8切换 | 空格使用 | 走到树枝/碎石自动拾取</p>
+        </div>
+
+        <div class="side-panel">
+            <div class="panel-section">
+                <h3>📜 日志</h3>
+                <div class="game-log" id="gameLog"></div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🧑‍🌾 状态</h3>
+                <div class="character-preview">
+                    <div class="character-sprite">
+                        🧑‍🌾<span class="held-item" id="heldItem"></span>
+                    </div>
+                </div>
+                <div class="info-item"><span>💰 金币:</span><span id="goldCount">50</span></div>
+                <div class="info-item"><span>❤️ 生命:</span><span id="hpCount">100/100</span></div>
+                <div class="info-item"><span>⚔️ 攻击:</span><span id="atkCount">5</span></div>
+                <div class="selected-tool">当前: <span id="currentTool">选择工具</span></div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🎒 装备栏 (点击卸下)</h3>
+                <div class="equipment-grid">
+                    <div class="equip-slot" id="equip-weapon" onclick="unequipItem('weapon')">⚔️<br>武器</div>
+                    <div class="equip-slot" id="equip-tool" onclick="unequipItem('tool')">🛠️<br>工具</div>
+                    <div class="equip-slot" id="equip-accessory" onclick="unequipItem('accessory')">💍<br>饰品</div>
+                </div>
+            </div>
+
+            <div class="panel-section">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('seeds', this)">🌰种子</button>
+                    <button class="tab-btn" onclick="switchTab('shop', this)">🏪商店</button>
+                    <button class="tab-btn" onclick="switchTab('craft', this)">🔨制造</button>
+                </div>
+                <div class="tab-content active" id="tab-seeds"><div class="seed-grid" id="seedGrid"></div></div>
+                <div class="tab-content" id="tab-shop"><div class="shop-grid" id="shopGrid"></div></div>
+                <div class="tab-content" id="tab-craft"><div class="craft-grid" id="craftGrid"></div></div>
+            </div>
+
+            <div class="panel-section">
+                <h3>🏚️ 仓库 (点击装备/出售)</h3>
+                <div class="warehouse-content" id="warehouseContent">
+                    <div class="warehouse-item empty">仓库是空的</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==================== 配置 ====================
+        const CONFIG = {
+            MAP_SIZE: 24,
+            TILE_SIZE: 28,
+            STAGE_TIME: 8000
+        };
+
+        const FRUITS = {
+            strawberry: { name: '草莓', icon: '🍓', buyPrice: 10, sellPrice: 25 },
+            apple: { name: '苹果', icon: '🍎', buyPrice: 25, sellPrice: 60 },
+            orange: { name: '橙子', icon: '🍊', buyPrice: 50, sellPrice: 120 },
+            grape: { name: '葡萄', icon: '🍇', buyPrice: 100, sellPrice: 250 },
+            peach: { name: '桃子', icon: '🍑', buyPrice: 200, sellPrice: 500 }
+        };
+
+        const RESOURCES = {
+            twig: { name: '树枝', icon: '🌿', hp: 1, drops: { wood: 1 }, tool: null },
+            stone_small: { name: '碎石', icon: '🪨', hp: 1, drops: { stone: 1 }, tool: null },
+            tree_small: { name: '小树', icon: '🌳', hp: 3, drops: { wood: 3 }, tool: 'axe' },
+            tree_medium: { name: '中树', icon: '🌲', hp: 5, drops: { wood: 5 }, tool: 'axe' },
+            tree_large: { name: '大树', icon: '🎄', hp: 8, drops: { wood: 10 }, tool: 'axe' },
+            rock_small: { name: '小岩石', icon: '🪨', hp: 3, drops: { stone: 3 }, tool: 'pickaxe' },
+            rock_medium: { name: '中岩石', icon: '⛰️', hp: 5, drops: { stone: 5 }, tool: 'pickaxe' },
+            rock_large: { name: '大岩石', icon: '🗿', hp: 8, drops: { stone: 10, iron: 1 }, tool: 'pickaxe' }
+        };
+
+        const RECIPES = {
+            axe: { name: '斧头', icon: '🪓', type: 'tool', materials: { stone: 2, wood: 1 } },
+            pickaxe: { name: '镐子', icon: '⛏️', type: 'tool', materials: { stone: 1, wood: 2 } },
+            woodSword: { name: '木剑', icon: '🗡️', type: 'weapon', materials: { wood: 3 } },
+            stoneSword: { name: '石剑', icon: '⚔️', type: 'weapon', materials: { wood: 2, stone: 3 } },
+            woodBow: { name: '木弓', icon: '🏹', type: 'weapon', materials: { wood: 5 } },
+            ironSword: { name: '铁剑', icon: '🗡️', type: 'weapon', materials: { wood: 2, iron: 3 } }
+        };
+
+        const WEAPONS = {
+            woodSword: { damage: 10 }, stoneSword: { damage: 20 },
+            woodBow: { damage: 15 }, ironSword: { damage: 35 }
+        };
+
+        const MONSTERS = {
+            slime: { name: '史莱姆', icon: '🟢', hp: 10, damage: 5, drops: { slime_gel: 1, coin: 2 } },
+            goblin: { name: '哥布林', icon: '👺', hp: 25, damage: 8, drops: { goblin_ear: 1, coin: 3, wood: 1 } },
+            skeleton: { name: '骷髅', icon: '💀', hp: 40, damage: 12, drops: { bone: 1, coin: 4, stone: 1 } },
+            orc: { name: '兽人', icon: '👹', hp: 60, damage: 15, drops: { orc_tooth: 1, coin: 5, iron: 1 } }
+        };
+
+        const ITEM_NAMES = {
+            wood: '木头', stone: '石头', iron: '铁矿',
+            slime_gel: '史莱姆凝胶', goblin_ear: '哥布林耳朵', bone: '骨头', orc_tooth: '兽人牙齿', coin: '硬币',
+            strawberry_seed: '草莓种子', apple_seed: '苹果种子', orange_seed: '橙子种子',
+            grape_seed: '葡萄种子', peach_seed: '桃子种子',
+            wateringCan: '洒水壶', wateringCan_water: '水量',
+            strawberry: '草莓', apple: '苹果', orange: '橙子', grape: '葡萄', peach: '桃子',
+            axe: '斧头', pickaxe: '镐子', woodSword: '木剑', stoneSword: '石剑', woodBow: '木弓', ironSword: '铁剑'
+        };
+
+        // ==================== 游戏状态 ====================
+        let gameState = {
+            player: { x: 12, y: 12, hp: 100, maxHp: 100, atk: 5, facing: 'down' },
+            map: [],
+            selectedTool: null,
+            selectedSeed: null,
+            warehouse: { strawberry_seed: 3, wateringCan: 1, wateringCan_water: 5 },
+            equipment: { weapon: null, tool: null, accessory: null },
+            gold: 50,
+            stats: { planted: 0, harvested: 0, kills: 0 },
+            monsters: [],
+            camera: { x: 0, y: 0 }
+        };
+
+        const canvas = document.getElementById('gameCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // ==================== 初始化 ====================
+        function init() {
+            // 设置canvas尺寸
+            const container = document.getElementById('mapContainer');
+            canvas.width = container.clientWidth;
+            canvas.height = container.clientHeight;
+
+            initMap();
+            
+            document.addEventListener('keydown', handleKeyDown);
+            
+            setInterval(gameLoop, 1000);
+            
+            updateUI();
+            render();
+            
+            addLog('欢迎来到像素农场！', 'info');
+            addLog('WASD移动，走到树枝🌿碎石🪨上自动拾取', 'info');
+            addLog('收集木头和石头后制造工具', 'info');
+        }
+
+        function initMap() {
+            // 初始化空地图
+            gameState.map = [];
+            for (let y = 0; y < CONFIG.MAP_SIZE; y++) {
+                let row = [];
+                for (let x = 0; x < CONFIG.MAP_SIZE; x++) {
+                    row.push({ type: 'empty', crop: null, resource: null });
+                }
+                gameState.map.push(row);
+            }
+
+            // 放置井 (3x3区域)
+            for (let dy = 0; dy < 2; dy++) {
+                for (let dx = 0; dx < 2; dx++) {
+                    gameState.map[4 + dy][4 + dx] = { type: 'well', crop: null, resource: null };
+                }
+            }
+
+            // 生成资源 - 确保生成成功
+            let generated = 0;
+            const resourceTypes = [
+                { type: 'twig', count: 25 },
+                { type: 'stone_small', count: 25 },
+                { type: 'tree_small', count: 15 },
+                { type: 'tree_medium', count: 10 },
+                { type: 'tree_large', count: 5 },
+                { type: 'rock_small', count: 12 },
+                { type: 'rock_medium', count: 8 },
+                { type: 'rock_large', count: 4 }
+            ];
+
+            resourceTypes.forEach(({ type, count }) => {
+                for (let i = 0; i < count; i++) {
+                    if (spawnResource(type)) generated++;
+                }
+            });
+
+            console.log(`生成了 ${generated} 个资源`);
+        }
+
+        function spawnResource(type) {
+            for (let attempts = 0; attempts < 50; attempts++) {
+                let x = Math.floor(Math.random() * CONFIG.MAP_SIZE);
+                let y = Math.floor(Math.random() * CONFIG.MAP_SIZE);
+                
+                // 避开玩家出生点
+                if (Math.abs(x - gameState.player.x) < 4 && Math.abs(y - gameState.player.y) < 4) continue;
+                // 避开井
+                if (x >= 4 && x <= 5 && y >= 4 && y <= 5) continue;
+                // 确保位置为空
+                if (gameState.map[y][x].type !== 'empty') continue;
+
+                const resConfig = RESOURCES[type];
+                gameState.map[y][x] = {
+                    type: 'resource',
+                    crop: null,
+                    resource: {
+                        type: type,
+                        hp: resConfig.hp,
+                        maxHp: resConfig.hp
+                    }
+                };
+                return true;
+            }
+            return false;
+        }
+
+        // ==================== 渲染 ====================
+        function render() {
+            // 清空画布
+            ctx.fillStyle = '#2d5016';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+            // 计算相机位置（居中玩家）
+            const centerX = canvas.width / 2;
+            const centerY = canvas.height / 2;
+            gameState.camera.x = centerX - gameState.player.x * CONFIG.TILE_SIZE - CONFIG.TILE_SIZE / 2;
+            gameState.camera.y = centerY - gameState.player.y * CONFIG.TILE_SIZE - CONFIG.TILE_SIZE / 2;
+
+            // 绘制地图
+            for (let y = 0; y < CONFIG.MAP_SIZE; y++) {
+                for (let x = 0; x < CONFIG.MAP_SIZE; x++) {
+                    drawTile(x, y);
+                }
+            }
+
+            // 绘制怪物
+            gameState.monsters.forEach(monster => drawMonster(monster));
+
+            // 绘制玩家
+            drawPlayer();
+
+            requestAnimationFrame(render);
+        }
+
+        function drawTile(x, y) {
+            const screenX = Math.floor(x * CONFIG.TILE_SIZE + gameState.camera.x);
+            const screenY = Math.floor(y * CONFIG.TILE_SIZE + gameState.camera.y);
+            const cell = gameState.map[y][x];
+
+            // 跳过屏幕外的格子
+            if (screenX < -CONFIG.TILE_SIZE || screenX > canvas.width ||
+                screenY < -CONFIG.TILE_SIZE || screenY > canvas.height) return;
+
+            // 绘制地面
+            if (cell.type === 'well') {
+                ctx.fillStyle = '#1e4a6f';
+                ctx.fillRect(screenX, screenY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+                ctx.strokeStyle = '#3498db';
+                ctx.strokeRect(screenX, screenY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+            } else if (cell.crop) {
+                ctx.fillStyle = '#4a7c23';
+                ctx.fillRect(screenX, screenY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+            } else {
+                // 棋盘格草地
+                ctx.fillStyle = (x + y) % 2 === 0 ? '#3d6b1f' : '#2d5b0f';
+                ctx.fillRect(screenX, screenY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+            }
+
+            // 绘制格子边框（调试用，可选）
+            // ctx.strokeStyle = 'rgba(0,0,0,0.1)';
+            // ctx.strokeRect(screenX, screenY, CONFIG.TILE_SIZE, CONFIG.TILE_SIZE);
+
+            // 绘制内容
+            const centerX = screenX + CONFIG.TILE_SIZE / 2;
+            const centerY = screenY + CONFIG.TILE_SIZE / 2;
+
+            ctx.font = '18px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            if (cell.type === 'resource' && cell.resource) {
+                // 绘制资源
+                const resConfig = RESOURCES[cell.resource.type];
+                if (resConfig) {
+                    ctx.fillText(resConfig.icon, centerX, centerY);
+                    
+                    // 绘制血条（需要工具的资源）
+                    if (resConfig.tool && cell.resource.hp < cell.resource.maxHp) {
+                        const hpPercent = cell.resource.hp / cell.resource.maxHp;
+                        ctx.fillStyle = '#333';
+                        ctx.fillRect(screenX + 2, screenY + 2, 24, 3);
+                        ctx.fillStyle = hpPercent > 0.5 ? '#7cb342' : '#e94560';
+                        ctx.fillRect(screenX + 2, screenY + 2, 24 * hpPercent, 3);
+                    }
+                }
+            } else if (cell.type === 'well') {
+                ctx.fillText('💧', centerX, centerY);
+            } else if (cell.crop) {
+                // 绘制作物
+                const fruit = FRUITS[cell.crop.type];
+                if (cell.crop.stage < 3) {
+                    const stages = ['🌰', '🌱', '🌿'];
+                    ctx.fillText(stages[cell.crop.stage], centerX, centerY);
+                } else {
+                    ctx.fillText(fruit.icon, centerX, centerY);
+                }
+            }
+        }
+
+        function drawPlayer() {
+            const screenX = Math.floor(gameState.player.x * CONFIG.TILE_SIZE + gameState.camera.x);
+            const screenY = Math.floor(gameState.player.y * CONFIG.TILE_SIZE + gameState.camera.y);
+            const centerX = screenX + CONFIG.TILE_SIZE / 2;
+            const centerY = screenY + CONFIG.TILE_SIZE / 2;
+
+            // 阴影
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY + 8, 10, 5, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            // 玩家
+            ctx.font = '24px Arial';
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText('🧑‍🌾', centerX, centerY);
+
+            // 手持道具
+            const held = getHeldIcon();
+            if (held) {
+                const offsetX = gameState.player.facing === 'left' ? -15 : 15;
+                ctx.font = '14px Arial';
+                ctx.fillText(held, centerX + offsetX, centerY + 3);
+            }
+        }
+
+        function drawMonster(monster) {
+            const screenX = Math.floor(monster.x * CONFIG.TILE_SIZE + gameState.camera.x);
+            const screenY = Math.floor(monster.y * CONFIG.TILE_SIZE + gameState.camera.y);
+            const centerX = screenX + CONFIG.TILE_SIZE / 2;
+            const centerY = screenY + CONFIG.TILE_SIZE / 2;
+            const config = MONSTERS[monster.type];
+
+            ctx.fillStyle = 'rgba(0,0,0,0.3)';
+            ctx.beginPath();
+            ctx.ellipse(centerX, centerY + 8, 8, 4, 0, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.font = '20px Arial';
+            ctx.fillText(config.icon, centerX, centerY);
+
+            // 血条
+            const hpPercent = monster.hp / config.hp;
+            ctx.fillStyle = '#333';
+            ctx.fillRect(centerX - 12, centerY - 18, 24, 3);
+            ctx.fillStyle = hpPercent > 0.5 ? '#7cb342' : '#e94560';
+            ctx.fillRect(centerX - 12, centerY - 18, 24 * hpPercent, 3);
+        }
+
+        function getHeldIcon() {
+            if (!gameState.selectedTool) return null;
+            const icons = { plant: '🌱', water: '🚿', fertilize: '⚡', harvest: '🧺', axe: '🪓', pickaxe: '⛏️', sword: '⚔️', fillWater: '🚰' };
+            return icons[gameState.selectedTool];
+        }
+
+        // ==================== 输入处理 ====================
+        function handleKeyDown(e) {
+            let dx = 0, dy = 0;
+            
+            switch(e.key) {
+                case 'ArrowUp': case 'w': case 'W': dy = -1; break;
+                case 'ArrowDown': case 's': case 'S': dy = 1; break;
+                case 'ArrowLeft': case 'a': case 'A': dx = -1; gameState.player.facing = 'left'; break;
+                case 'ArrowRight': case 'd': case 'D': dx = 1; gameState.player.facing = 'right'; break;
+                case ' ': useTool(); return;
+                case '1': selectTool('plant'); return;
+                case '2': selectTool('water'); return;
+                case '3': selectTool('fertilize'); return;
+                case '4': selectTool('harvest'); return;
+                case '5': selectTool('axe'); return;
+                case '6': selectTool('pickaxe'); return;
+                case '7': selectTool('sword'); return;
+                case '8': selectTool('fillWater'); return;
+                default: return;
+            }
+            
+            e.preventDefault();
+            
+            const newX = gameState.player.x + dx;
+            const newY = gameState.player.y + dy;
+            
+            if (newX < 0 || newX >= CONFIG.MAP_SIZE || newY < 0 || newY >= CONFIG.MAP_SIZE) return;
+            
+            const cell = gameState.map[newY][newX];
+            
+            // 处理资源
+            if (cell.type === 'resource' && cell.resource) {
+                const resConfig = RESOURCES[cell.resource.type];
+                
+                if (!resConfig.tool) {
+                    // 直接拾取
+                    collectResource(newX, newY);
+                    return;
+                } else {
+                    // 需要工具
+                    if (resConfig.tool === 'axe' && gameState.selectedTool === 'axe' && gameState.equipment.tool === 'axe') {
+                        harvestResource(newX, newY);
+                        return;
+                    }
+                    if (resConfig.tool === 'pickaxe' && gameState.selectedTool === 'pickaxe' && gameState.equipment.tool === 'pickaxe') {
+                        harvestResource(newX, newY);
+                        return;
+                    }
+                    addLog(`需要${resConfig.tool === 'axe' ? '斧头' : '镐子'}才能采集${resConfig.name}`, 'warning');
+                    return;
+                }
+            }
+            
+            // 处理怪物
+            const monster = gameState.monsters.find(m => m.x === newX && m.y === newY);
+            if (monster) {
+                combat(monster);
+                return;
+            }
+            
+            // 移动
+            gameState.player.x = newX;
+            gameState.player.y = newY;
+            updateUI();
+        }
+
+        function useTool() {
+            const x = gameState.player.x;
+            const y = gameState.player.y;
+            const cell = gameState.map[y][x];
+            
+            if (!gameState.selectedTool) {
+                addLog('请先选择工具', 'info');
+                return;
+            }
+            
+            switch(gameState.selectedTool) {
+                case 'plant': plantCrop(x, y); break;
+                case 'water': waterCrop(x, y); break;
+                case 'fertilize': fertilizeCrop(x, y); break;
+                case 'harvest': harvestCrop(x, y); break;
+                case 'axe':
+                    if (cell.type === 'resource' && cell.resource && RESOURCES[cell.resource.type].tool === 'axe') {
+                        if (gameState.equipment.tool === 'axe') harvestResource(x, y);
+                        else addLog('请先装备斧头', 'warning');
+                    } else addLog('这里没有可砍伐的树木', 'error');
+                    break;
+                case 'pickaxe':
+                    if (cell.type === 'resource' && cell.resource && RESOURCES[cell.resource.type].tool === 'pickaxe') {
+                        if (gameState.equipment.tool === 'pickaxe') harvestResource(x, y);
+                        else addLog('请先装备镐子', 'warning');
+                    } else addLog('这里没有可开采的岩石', 'error');
+                    break;
+                case 'fillWater':
+                    if (cell.type === 'well') {
+                        gameState.warehouse.wateringCan_water = 5;
+                        addLog('洒水壶已灌满', 'success');
+                        updateUI();
+                    } else addLog('需要到井边打水', 'warning');
+                    break;
+            }
+        }
+
+        // ==================== 游戏逻辑 ====================
+        function collectResource(x, y) {
+            const cell = gameState.map[y][x];
+            const resConfig = RESOURCES[cell.resource.type];
+            
+            for (let [item, count] of Object.entries(resConfig.drops)) {
+                if (!gameState.warehouse[item]) gameState.warehouse[item] = 0;
+                gameState.warehouse[item] += count;
+            }
+            
+            const drops = Object.entries(resConfig.drops).map(([item, count]) => `${ITEM_NAMES[item] || item}x${count}`).join('、');
+            addLog(`拾取${resConfig.name}，获得${drops}`, 'success');
+            
+            cell.type = 'empty';
+            cell.resource = null;
+            
+            gameState.player.x = x;
+            gameState.player.y = y;
+            updateUI();
+        }
+
+        function harvestResource(x, y) {
+            const cell = gameState.map[y][x];
+            const resConfig = RESOURCES[cell.resource.type];
+            
+            cell.resource.hp--;
+            
+            if (cell.resource.hp <= 0) {
+                for (let [item, count] of Object.entries(resConfig.drops)) {
+                    if (!gameState.warehouse[item]) gameState.warehouse[item] = 0;
+                    gameState.warehouse[item] += count;
+                }
+                
+                const drops = Object.entries(resConfig.drops).map(([item, count]) => `${ITEM_NAMES[item] || item}x${count}`).join('、');
+                addLog(`采集${resConfig.name}完成，获得${drops}`, 'success');
+                
+                cell.type = 'empty';
+                cell.resource = null;
+                updateUI();
+            } else {
+                addLog(`正在采集${resConfig.name}...剩余${cell.resource.hp}次`, 'info');
+            }
+        }
+
+        function combat(monster) {
+            const config = MONSTERS[monster.type];
+            const weaponDamage = gameState.equipment.weapon ? WEAPONS[gameState.equipment.weapon].damage : 0;
+            const damage = gameState.player.atk + weaponDamage;
+            
+            monster.hp -= damage;
+            addLog(`对${config.name}造成${damage}伤害`, 'info');
+            
+            if (monster.hp <= 0) {
+                // 击杀
+                const idx = gameState.monsters.indexOf(monster);
+                if (idx > -1) gameState.monsters.splice(idx, 1);
+                
+                gameState.stats.kills++;
+                
+                for (let [item, count] of Object.entries(config.drops)) {
+                    const actualCount = Math.floor(Math.random() * count) + 1;
+                    if (!gameState.warehouse[item]) gameState.warehouse[item] = 0;
+                    gameState.warehouse[item] += actualCount;
+                }
+                
+                const goldReward = Math.floor(Math.random() * 15) + 10;
+                gameState.gold += goldReward;
+                
+                addLog(`击败${config.name}，获得金币x${goldReward}`, 'loot');
+                updateUI();
+            } else {
+                // 反击
+                setTimeout(() => {
+                    gameState.player.hp -= config.damage;
+                    addLog(`受到${config.name}攻击，-${config.damage}HP`, 'error');
+                    if (gameState.player.hp <= 0) {
+                        gameState.player.hp = gameState.player.maxHp;
+                        gameState.player.x = 12;
+                        gameState.player.y = 12;
+                        gameState.gold = Math.floor(gameState.gold * 0.8);
+                        addLog('你倒下了，失去20%金币', 'error');
+                    }
+                    updateUI();
+                }, 300);
+            }
+        }
+
+        function plantCrop(x, y) {
+            const cell = gameState.map[y][x];
+            if (cell.type !== 'empty') { addLog('这里不能种植', 'error'); return; }
+            if (!gameState.selectedSeed) { addLog('请先选择种子', 'info'); return; }
+            
+            const seedKey = gameState.selectedSeed + '_seed';
+            if (!gameState.warehouse[seedKey] || gameState.warehouse[seedKey] <= 0) {
+                addLog('种子不足', 'error'); return;
+            }
+            
+            gameState.warehouse[seedKey]--;
+            cell.crop = { type: gameState.selectedSeed, stage: 0, plantTime: Date.now(), lastStageTime: Date.now(), needsWater: false, fertilized: false, waterCount: 0 };
+            cell.type = 'crop';
+            gameState.stats.planted++;
+            
+            addLog(`种植了${FRUITS[gameState.selectedSeed].name}`, 'success');
+            updateUI();
+        }
+
+        function waterCrop(x, y) {
+            const cell = gameState.map[y][x];
+            if (!cell.crop) { addLog('这里没有作物', 'error'); return; }
+            if (!gameState.warehouse.wateringCan) { addLog('没有洒水壶', 'error'); return; }
+            if ((gameState.warehouse.wateringCan_water || 0) <= 0) { addLog('洒水壶没水了', 'warning'); return; }
+            if (!cell.crop.needsWater) { addLog('作物不需要浇水', 'info'); return; }
+            
+            gameState.warehouse.wateringCan_water--;
+            cell.crop.needsWater = false;
+            cell.crop.waterCount++;
+            cell.crop.lastStageTime = Date.now();
+            
+            addLog('浇水成功', 'success');
+            updateUI();
+        }
+
+        function fertilizeCrop(x, y) {
+            const cell = gameState.map[y][x];
+            if (!cell.crop) { addLog('这里没有作物', 'error'); return; }
+            if (cell.crop.stage >= 3) { addLog('作物已成熟', 'info'); return; }
+            if (cell.crop.fertilized) { addLog('已经施过肥了', 'info'); return; }
+            if (!gameState.warehouse.fertilizer || gameState.warehouse.fertilizer <= 0) {
+                addLog('没有肥料', 'error'); return;
+            }
+            
+            gameState.warehouse.fertilizer--;
+            cell.crop.fertilized = true;
+            addLog('施肥成功，成长速度+50%', 'success');
+            updateUI();
+        }
+
+        function harvestCrop(x, y) {
+            const cell = gameState.map[y][x];
+            if (!cell.crop || cell.crop.stage < 3) { addLog('作物还未成熟', 'error'); return; }
+            
+            const crop = cell.crop;
+            if (!gameState.warehouse[crop.type]) gameState.warehouse[crop.type] = 0;
+            gameState.warehouse[crop.type]++;
+            
+            const seedKey = crop.type + '_seed';
+            if (!gameState.warehouse[seedKey]) gameState.warehouse[seedKey] = 0;
+            gameState.warehouse[seedKey] += 2;
+            
+            gameState.stats.harvested++;
+            cell.crop = null;
+            cell.type = 'empty';
+            
+            addLog(`收获${FRUITS[crop.type].name}，返还2颗种子`, 'success');
+            updateUI();
+        }
+
+        function gameLoop() {
+            // 作物生长
+            const now = Date.now();
+            for (let y = 0; y < CONFIG.MAP_SIZE; y++) {
+                for (let x = 0; x < CONFIG.MAP_SIZE; x++) {
+                    const cell = gameState.map[y][x];
+                    if (cell.crop && cell.crop.stage < 3) {
+                        const crop = cell.crop;
+                        if (!crop.needsWater) {
+                            const duration = crop.fertilized ? CONFIG.STAGE_TIME * 0.5 : CONFIG.STAGE_TIME;
+                            if (now - crop.lastStageTime >= duration) crop.needsWater = true;
+                        }
+                        if (!crop.needsWater && crop.waterCount > crop.stage) {
+                            crop.stage++;
+                            if (crop.stage === 3) addLog(`${FRUITS[crop.type].name}成熟了！`, 'success');
+                        }
+                    }
+                }
+            }
+            
+            // 随机生成怪物
+            if (Math.random() < 0.1 && gameState.monsters.length < 5) {
+                spawnMonster();
+            }
+        }
+
+        function spawnMonster() {
+            const types = ['slime', 'slime', 'goblin', 'skeleton'];
+            const type = types[Math.floor(Math.random() * types.length)];
+            
+            for (let i = 0; i < 30; i++) {
+                let x = Math.floor(Math.random() * CONFIG.MAP_SIZE);
+                let y = Math.floor(Math.random() * CONFIG.MAP_SIZE);
+                if (Math.abs(x - gameState.player.x) < 5 && Math.abs(y - gameState.player.y) < 5) continue;
+                if (gameState.map[y][x].type !== 'empty') continue;
+                
+                const config = MONSTERS[type];
+                gameState.monsters.push({ type, x, y, hp: config.hp, maxHp: config.hp });
+                return;
+            }
+        }
+
+        // ==================== UI 功能 ====================
+        function selectTool(tool) {
+            if (tool === 'axe' && gameState.equipment.tool !== 'axe') { addLog('请先装备斧头', 'warning'); return; }
+            if (tool === 'pickaxe' && gameState.equipment.tool !== 'pickaxe') { addLog('请先装备镐子', 'warning'); return; }
+            if (tool === 'sword' && !gameState.equipment.weapon) { addLog('请先装备武器', 'warning'); return; }
+            
+            gameState.selectedTool = tool;
+            
+            document.querySelectorAll('.tool-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelector(`[data-tool="${tool}"]`)?.classList.add('active');
+            
+            const names = { plant: '🌱种植', water: '💧浇水', fertilize: '⚡施肥', harvest: '🧺收获', axe: '🪓斧头', pickaxe: '⛏️镐子', sword: '⚔️武器', fillWater: '🚰打水' };
+            document.getElementById('currentTool').textContent = names[tool] || '选择工具';
+            
+            const held = getHeldIcon();
+            document.getElementById('heldItem').textContent = held || '';
+        }
+
+        function selectSeed(seedType) {
+            gameState.selectedSeed = seedType;
+            updateUI();
+            selectTool('plant');
+        }
+
+        function switchTab(tabName, btn) {
+            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+            btn.classList.add('active');
+            document.getElementById(`tab-${tabName}`).classList.add('active');
+        }
+
+        function craftItem(key) {
+            const recipe = RECIPES[key];
+            for (let [mat, amt] of Object.entries(recipe.materials)) {
+                if ((gameState.warehouse[mat] || 0) < amt) {
+                    addLog(`材料不足：${ITEM_NAMES[mat] || mat}`, 'error');
+                    return;
+                }
+            }
+            
+            for (let [mat, amt] of Object.entries(recipe.materials)) {
+                gameState.warehouse[mat] -= amt;
+            }
+            
+            if (!gameState.warehouse[key]) gameState.warehouse[key] = 0;
+            gameState.warehouse[key]++;
+            
+            addLog(`制造成功：${recipe.name}`, 'success');
+            updateUI();
+        }
+
+        function equipItem(key) {
+            const recipe = RECIPES[key];
+            if (!recipe || gameState.warehouse[key] <= 0) return;
+            
+            if (gameState.equipment[recipe.type]) {
+                const old = gameState.equipment[recipe.type];
+                if (!gameState.warehouse[old]) gameState.warehouse[old] = 0;
+                gameState.warehouse[old]++;
+            }
+            
+            gameState.warehouse[key]--;
+            gameState.equipment[recipe.type] = key;
+            
+            if (recipe.type === 'weapon') {
+                gameState.player.atk = 5 + WEAPONS[key].damage;
+            }
+            
+            addLog(`装备${recipe.name}`, 'success');
+            updateUI();
+        }
+
+        function unequipItem(slot) {
+            const item = gameState.equipment[slot];
+            if (!item) return;
+            
+            gameState.equipment[slot] = null;
+            if (!gameState.warehouse[item]) gameState.warehouse[item] = 0;
+            gameState.warehouse[item]++;
+            
+            if (slot === 'weapon') gameState.player.atk = 5;
+            
+            addLog('卸下装备', 'info');
+            updateUI();
+        }
+
+        function buyItem(type, key) {
+            if (type === 'seed') {
+                const fruit = FRUITS[key];
+                if (gameState.gold < fruit.buyPrice) { addLog('金币不足', 'error'); return; }
+                gameState.gold -= fruit.buyPrice;
+                const seedKey = key + '_seed';
+                if (!gameState.warehouse[seedKey]) gameState.warehouse[seedKey] = 0;
+                gameState.warehouse[seedKey]++;
+                addLog(`购买${fruit.name}种子`, 'success');
+            } else if (type === 'fertilizer') {
+                if (gameState.gold < 15) { addLog('金币不足', 'error'); return; }
+                gameState.gold -= 15;
+                if (!gameState.warehouse.fertilizer) gameState.fertilizer = 0;
+                gameState.warehouse.fertilizer++;
+                addLog('购买肥料', 'success');
+            }
+            updateUI();
+        }
+
+        function sellItem(key) {
+            if (key === 'wateringCan' || key === 'wateringCan_water') {
+                addLog('洒水壶不能出售', 'warning'); return;
+            }
+            if (!gameState.warehouse[key] || gameState.warehouse[key] <= 0) return;
+            
+            let price = 0;
+            if (FRUITS[key]) price = FRUITS[key].sellPrice;
+            else if (key === 'wood') price = 3;
+            else if (key === 'stone') price = 5;
+            else if (key === 'iron') price = 15;
+            else if (key === 'slime_gel') price = 5;
+            else if (key === 'goblin_ear') price = 10;
+            else if (key === 'bone') price = 8;
+            else if (key === 'orc_tooth') price = 15;
+            else if (key === 'coin') price = 1;
+            
+            if (price > 0) {
+                gameState.warehouse[key]--;
+                gameState.gold += price;
+                addLog(`出售${ITEM_NAMES[key] || key}，获得${price}金币`, 'success');
+                updateUI();
+            }
+        }
+
+        // ==================== UI 更新 ====================
+        function updateUI() {
+            // 状态
+            document.getElementById('goldCount').textContent = gameState.gold;
+            document.getElementById('hpCount').textContent = `${gameState.player.hp}/${gameState.player.maxHp}`;
+            document.getElementById('atkCount').textContent = gameState.player.atk;
+            
+            // 工具按钮状态
+            document.querySelector('[data-tool="axe"]').disabled = gameState.equipment.tool !== 'axe';
+            document.querySelector('[data-tool="pickaxe"]').disabled = gameState.equipment.tool !== 'pickaxe';
+            document.querySelector('[data-tool="sword"]').disabled = !gameState.equipment.weapon;
+            
+            // 装备栏
+            const slots = {
+                'equip-weapon': gameState.equipment.weapon,
+                'equip-tool': gameState.equipment.tool,
+                'equip-accessory': gameState.equipment.accessory
+            };
+            
+            for (let [id, item] of Object.entries(slots)) {
+                const slot = document.getElementById(id);
+                if (item && RECIPES[item]) {
+                    slot.classList.add('has-item');
+                    slot.innerHTML = `${RECIPES[item].icon}<br>${RECIPES[item].name}`;
+                } else {
+                    slot.classList.remove('has-item');
+                    const defaults = { 'equip-weapon': '⚔️<br>武器', 'equip-tool': '🛠️<br>工具', 'equip-accessory': '💍<br>饰品' };
+                    slot.innerHTML = defaults[id];
+                }
+            }
+            
+            // 仓库
+            const warehouseEl = document.getElementById('warehouseContent');
+            let html = '';
+            for (let [key, count] of Object.entries(gameState.warehouse)) {
+                if (count > 0 && key !== 'wateringCan_water') {
+                    let icon, name, action = '';
+                    
+                    if (key.endsWith('_seed')) {
+                        const fruit = key.replace('_seed', '');
+                        icon = '🌰'; name = FRUITS[fruit]?.name + '种子' || '种子';
+                        action = `selectSeed('${fruit}')`;
+                    } else if (RECIPES[key]) {
+                        icon = RECIPES[key].icon; name = RECIPES[key].name;
+                        action = `equipItem('${key}')`;
+                    } else if (key === 'wateringCan') {
+                        icon = '🚿'; name = `洒水壶(${gameState.warehouse.wateringCan_water || 0}/5)`;
+                    } else if (FRUITS[key]) {
+                        icon = FRUITS[key].icon; name = FRUITS[key].name;
+                        action = `sellItem('${key}')`;
+                    } else {
+                        const icons = { wood: '🪵', stone: '🪨', iron: '⛓️', slime_gel: '💚', goblin_ear: '👂', bone: '🦴', orc_tooth: '🦷', coin: '🪙', fertilizer: '🧪' };
+                        icon = icons[key] || '📦'; name = ITEM_NAMES[key] || key;
+                        action = `sellItem('${key}')`;
+                    }
+                    
+                    const onclick = action ? `onclick="${action}"` : '';
+                    const style = action ? '' : 'style="opacity:0.6;cursor:default;"';
+                    html += `<div class="warehouse-item" ${onclick} ${style}><span>${icon} ${name}</span><span>x${count}</span></div>`;
+                }
+            }
+            warehouseEl.innerHTML = html || '<div class="warehouse-item empty">仓库是空的</div>';
+            
+            // 种子
+            const seedEl = document.getElementById('seedGrid');
+            let seedHtml = '';
+            for (let [key, fruit] of Object.entries(FRUITS)) {
+                const seedKey = key + '_seed';
+                const count = gameState.warehouse[seedKey] || 0;
+                const active = gameState.selectedSeed === key ? 'active' : '';
+                const disabled = count <= 0 ? 'disabled' : '';
+                seedHtml += `<button class="seed-btn ${active}" ${disabled} onclick="selectSeed('${key}')"><span>${fruit.icon}</span><div>${fruit.name}<br><small>拥有:${count}</small></div></button>`;
+            }
+            seedEl.innerHTML = seedHtml;
+            
+            // 商店
+            const shopEl = document.getElementById('shopGrid');
+            let shopHtml = '';
+            for (let [key, fruit] of Object.entries(FRUITS)) {
+                const canAfford = gameState.gold >= fruit.buyPrice ? '' : 'disabled';
+                shopHtml += `<div class="shop-item ${canAfford}" onclick="buyItem('seed', '${key}')"><div class="item-name">🌰 ${fruit.name}种子</div><div class="item-price">💰${fruit.buyPrice}</div></div>`;
+            }
+            const fertAfford = gameState.gold >= 15 ? '' : 'disabled';
+            shopHtml += `<div class="shop-item ${fertAfford}" onclick="buyItem('fertilizer')"><div class="item-name">🧪 肥料</div><div class="item-price">💰15</div></div>`;
+            shopEl.innerHTML = shopHtml;
+            
+            // 制造
+            const craftEl = document.getElementById('craftGrid');
+            let craftHtml = '';
+            for (let [key, recipe] of Object.entries(RECIPES)) {
+                let canCraft = true;
+                let costText = '';
+                for (let [mat, amt] of Object.entries(recipe.materials)) {
+                    const has = gameState.warehouse[mat] || 0;
+                    costText += `${ITEM_NAMES[mat]}:${has}/${amt} `;
+                    if (has < amt) canCraft = false;
+                }
+                craftHtml += `<div class="craft-item ${canCraft ? '' : 'disabled'}" onclick="craftItem('${key}')"><div class="item-name">${recipe.icon} ${recipe.name}</div><div class="item-cost">${costText}</div></div>`;
+            }
+            craftEl.innerHTML = craftHtml;
+        }
+
+        function addLog(msg, type = 'info') {
+            const log = document.getElementById('gameLog');
+            const entry = document.createElement('div');
+            entry.className = `log-entry ${type}`;
+            const time = new Date().toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+            entry.innerHTML = `<span class="log-time">${time}</span>${msg}`;
+            log.appendChild(entry);
+            log.scrollTop = log.scrollHeight;
+            while (log.children.length > 30) log.removeChild(log.firstChild);
+        }
+
+        // 启动
+        window.onload = init;
+    </script>
+</body>
+</html>

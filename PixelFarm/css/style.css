@@ -1,0 +1,367 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Microsoft YaHei', sans-serif;
+    background: #1a1a2e;
+    min-height: 100vh;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 10px;
+}
+
+.game-wrapper {
+    display: flex;
+    gap: 15px;
+    max-width: 1400px;
+    width: 100%;
+    height: 95vh;
+}
+
+.game-container {
+    background: #0d1117;
+    border-radius: 12px;
+    padding: 15px;
+    box-shadow: 0 10px 40px rgba(0,0,0,0.7);
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+}
+
+.game-title {
+    text-align: center;
+    color: #7cb342;
+    font-size: 18px;
+    margin-bottom: 10px;
+}
+
+.map-container {
+    background: #1a1a2e;
+    border-radius: 8px;
+    border: 3px solid #2d5016;
+    overflow: hidden;
+    flex: 1;
+    position: relative;
+    min-height: 400px;
+}
+
+#gameCanvas {
+    display: block;
+    width: 100%;
+    height: 100%;
+}
+
+.bottom-toolbar {
+    display: flex;
+    gap: 6px;
+    margin-top: 10px;
+    padding: 8px;
+    background: #161b22;
+    border-radius: 8px;
+    overflow-x: auto;
+}
+
+.tool-btn {
+    padding: 6px 10px;
+    border: 2px solid #30363d;
+    background: #21262d;
+    color: #fff;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 11px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 2px;
+    min-width: 55px;
+    transition: all 0.2s;
+}
+
+.tool-btn:hover {
+    background: #30363d;
+}
+
+.tool-btn.active {
+    background: #e94560;
+    border-color: #ff6b6b;
+}
+
+.tool-btn:disabled {
+    opacity: 0.3;
+    cursor: not-allowed;
+}
+
+.tool-icon {
+    font-size: 18px;
+}
+
+.side-panel {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 280px;
+    height: 100%;
+}
+
+.panel-section {
+    background: #161b22;
+    padding: 10px;
+    border-radius: 8px;
+    color: #fff;
+    border: 1px solid #30363d;
+}
+
+.panel-section h3 {
+    color: #7cb342;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.game-log {
+    background: #0d1117;
+    border: 1px solid #30363d;
+    border-radius: 6px;
+    padding: 8px;
+    height: 120px;
+    overflow-y: auto;
+    font-size: 11px;
+}
+
+.log-entry {
+    padding: 3px 6px;
+    margin: 2px 0;
+    border-radius: 3px;
+}
+
+.log-entry.success {
+    color: #9ccc65;
+}
+
+.log-entry.error {
+    color: #ff6b6b;
+}
+
+.log-entry.info {
+    color: #74b9ff;
+}
+
+.log-entry.warning {
+    color: #fdcb6e;
+}
+
+.log-entry.loot {
+    color: #bb8fce;
+}
+
+.info-item {
+    display: flex;
+    justify-content: space-between;
+    margin: 3px 0;
+    font-size: 11px;
+}
+
+.info-item span:last-child {
+    color: #7cb342;
+    font-weight: bold;
+}
+
+.selected-tool {
+    background: #0f3460;
+    padding: 6px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 11px;
+    margin-top: 6px;
+}
+
+.character-preview {
+    background: #21262d;
+    border-radius: 6px;
+    padding: 8px;
+    text-align: center;
+}
+
+.character-sprite {
+    font-size: 36px;
+    position: relative;
+    display: inline-block;
+}
+
+.held-item {
+    position: absolute;
+    font-size: 18px;
+    right: -5px;
+    bottom: 0;
+}
+
+.tabs {
+    display: flex;
+    gap: 3px;
+    margin-bottom: 8px;
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 5px 3px;
+    border: none;
+    background: #21262d;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    transition: background 0.2s;
+}
+
+.tab-btn.active {
+    background: #7cb342;
+}
+
+.tab-content {
+    display: none;
+}
+
+.tab-content.active {
+    display: block;
+}
+
+.seed-grid,
+.shop-grid,
+.craft-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    max-height: 100px;
+    overflow-y: auto;
+}
+
+.seed-btn,
+.shop-item,
+.craft-item {
+    padding: 6px;
+    border: 1px solid #30363d;
+    background: #21262d;
+    color: #fff;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 10px;
+    transition: all 0.2s;
+}
+
+.seed-btn:hover,
+.shop-item:hover,
+.craft-item:hover {
+    background: #30363d;
+}
+
+.seed-btn.active {
+    background: #7cb342;
+}
+
+.seed-btn:disabled,
+.shop-item.disabled,
+.craft-item.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+}
+
+.warehouse-content {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 4px;
+    max-height: 120px;
+    overflow-y: auto;
+}
+
+.warehouse-item {
+    background: #21262d;
+    padding: 5px;
+    border-radius: 3px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 10px;
+    cursor: pointer;
+    transition: background 0.2s;
+}
+
+.warehouse-item:hover {
+    background: #30363d;
+}
+
+.warehouse-item.empty {
+    color: #666;
+    justify-content: center;
+    cursor: default;
+}
+
+.equipment-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 4px;
+}
+
+.equip-slot {
+    background: #21262d;
+    padding: 6px;
+    border-radius: 4px;
+    text-align: center;
+    font-size: 10px;
+    border: 1px dashed #444;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.equip-slot.has-item {
+    border: 1px solid #7cb342;
+    background: #1a2a1a;
+}
+
+.equip-slot:hover {
+    background: #30363d;
+}
+
+.help-text {
+    color: #888;
+    font-size: 10px;
+    margin-top: 6px;
+    text-align: center;
+}
+
+::-webkit-scrollbar {
+    width: 4px;
+}
+
+::-webkit-scrollbar-track {
+    background: #21262d;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #444;
+}
+
+/* 响应式设计 */
+@media (max-width: 900px) {
+    .game-wrapper {
+        flex-direction: column;
+        height: auto;
+    }
+    
+    .side-panel {
+        width: 100%;
+        flex-direction: row;
+        flex-wrap: wrap;
+    }
+    
+    .panel-section {
+        flex: 1;
+        min-width: 200px;
+    }
+    
+    .map-container {
+        min-height: 300px;
+    }
+}

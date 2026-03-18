@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>像素农场 - Phaser版</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            background: #1a1a2e;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            font-family: 'Microsoft YaHei', sans-serif;
+        }
+        #game-container {
+            display: flex;
+            gap: 10px;
+        }
+        #game-wrapper {
+            position: relative;
+        }
+        #equipment-bar {
+            position: absolute;
+            bottom: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(22, 27, 34, 0.9);
+            border-radius: 8px;
+            padding: 8px 12px;
+            display: flex;
+            gap: 8px;
+            border: 1px solid #30363d;
+            z-index: 100;
+        }
+        .equip-slot {
+            background: #21262d;
+            padding: 8px 12px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            border: 1px dashed #444;
+            cursor: pointer;
+            min-width: 50px;
+        }
+        .equip-slot:hover { background: #30363d; }
+        .equip-slot.has-item {
+            border: 1px solid #7cb342;
+            background: #1a2a1a;
+        }
+        .equip-slot .label {
+            color: #888;
+            font-size: 9px;
+            margin-top: 2px;
+        }
+        .equip-slot .icon {
+            font-size: 16px;
+        }
+        #ui-panel {
+            width: 280px;
+            background: #161b22;
+            border-radius: 12px;
+            padding: 10px;
+            color: #fff;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            max-height: 700px;
+            overflow-y: auto;
+        }
+        .panel-section {
+            background: #0d1117;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #30363d;
+        }
+        .panel-section h3 {
+            color: #7cb342;
+            font-size: 12px;
+            margin-bottom: 6px;
+        }
+        .game-log {
+            background: #161b22;
+            border-radius: 6px;
+            padding: 8px;
+            height: 100px;
+            overflow-y: auto;
+            font-size: 11px;
+        }
+        .log-entry {
+            padding: 2px 4px;
+            margin: 1px 0;
+            border-radius: 3px;
+        }
+        .log-entry.success { color: #9ccc65; }
+        .log-entry.error { color: #ff6b6b; }
+        .log-entry.info { color: #74b9ff; }
+        .log-entry.warning { color: #fdcb6e; }
+        .log-entry.loot { color: #bb8fce; }
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            margin: 3px 0;
+            font-size: 11px;
+        }
+        .info-item span:last-child {
+            color: #7cb342;
+            font-weight: bold;
+        }
+        .tabs {
+            display: flex;
+            gap: 3px;
+            margin-bottom: 8px;
+        }
+        .tab-btn {
+            flex: 1;
+            padding: 5px;
+            border: none;
+            background: #21262d;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+        }
+        .tab-btn.active { background: #7cb342; }
+        .tab-content { display: none; }
+        .tab-content.active { display: block; }
+        .grid-container {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .grid-item {
+            padding: 6px;
+            border: 1px solid #30363d;
+            background: #21262d;
+            color: #fff;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 10px;
+            text-align: center;
+        }
+        .grid-item:hover { background: #30363d; }
+        .grid-item.active { background: #7cb342; }
+        .grid-item.disabled { opacity: 0.5; cursor: not-allowed; }
+        .warehouse-content {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 4px;
+            max-height: 100px;
+            overflow-y: auto;
+        }
+        .warehouse-item {
+            background: #21262d;
+            padding: 5px;
+            border-radius: 3px;
+            display: flex;
+            justify-content: space-between;
+            font-size: 10px;
+            cursor: pointer;
+        }
+        .warehouse-item:hover { background: #30363d; }
+        .warehouse-item.empty {
+            color: #666;
+            justify-content: center;
+            cursor: default;
+        }
+        .selected-tool {
+            background: #0f3460;
+            padding: 6px;
+            border-radius: 4px;
+            text-align: center;
+            font-size: 11px;
+            margin-top: 6px;
+        }
+        .help-text {
+            color: #888;
+            font-size: 10px;
+            text-align: center;
+            margin-top: 6px;
+        }
+    </style>
+</head>
+<body>
+    <div id="game-container">
+        <div id="game-wrapper">
+            <div id="equipment-bar">
+                <div class="equip-slot" id="equip-weapon" onclick="openEquipMenu('weapon')">
+                    <div class="icon">⚔️</div>
+                    <div class="label">武器</div>
+                </div>
+                <div class="equip-slot" id="equip-tool" onclick="openEquipMenu('tool')">
+                    <div class="icon">🛠️</div>
+                    <div class="label">工具</div>
+                </div>
+                <div class="equip-slot" id="equip-accessory" onclick="openEquipMenu('accessory')">
+                    <div class="icon">💍</div>
+                    <div class="label">饰品</div>
+                </div>
+            </div>
+        </div>
+        <div id="ui-panel">
+            <div class="panel-section">
+                <h3>📜 日志</h3>
+                <div class="game-log" id="gameLog"></div>
+            </div>
+            <div class="panel-section">
+                <h3>🧑‍🌾 状态</h3>
+                <div class="info-item"><span>💰 金币:</span><span id="goldCount">50</span></div>
+                <div class="info-item"><span>❤️ 生命:</span><span id="hpCount">100/100</span></div>
+                <div class="info-item"><span>⚔️ 攻击:</span><span id="atkCount">5</span></div>
+                <div class="selected-tool">当前: <span id="currentTool">选择工具</span></div>
+            </div>
+            <div class="panel-section">
+                <div class="tabs">
+                    <button class="tab-btn active" onclick="switchTab('seeds')">🌰种子</button>
+                    <button class="tab-btn" onclick="switchTab('shop')">🏪商店</button>
+                    <button class="tab-btn" onclick="switchTab('craft')">🔨制造</button>
+                </div>
+                <div class="tab-content active" id="tab-seeds">
+                    <div class="grid-container" id="seedGrid"></div>
+                </div>
+                <div class="tab-content" id="tab-shop">
+                    <div class="grid-container" id="shopGrid"></div>
+                </div>
+                <div class="tab-content" id="tab-craft">
+                    <div class="grid-container" id="craftGrid"></div>
+                </div>
+            </div>
+            <div class="panel-section">
+                <h3>🏚️ 仓库</h3>
+                <div class="warehouse-content" id="warehouseContent">
+                    <div class="warehouse-item empty">仓库是空的</div>
+                </div>
+            </div>
+            <p class="help-text">WASD移动 | 1-8切换工具 | 空格使用</p>
+        </div>
+    </div>
+
+    <script src="../js/phaser.js"></script>
+    <script src="../js/config.js"></script>
+    <script src="../js/constants.js"></script>
+    <script src="../js/scenes/BootScene.js"></script>
+    <script src="../js/scenes/PreloadScene.js"></script>
+    <script src="../js/scenes/GameScene.js"></script>
+    <script src="../js/entities/Player.js"></script>
+    <script src="../js/entities/Resource.js"></script>
+    <script src="../js/entities/Crop.js"></script>
+    <script src="../js/entities/Monster.js"></script>
+    <script src="../js/systems/InventorySystem.js"></script>
+    <script src="../js/systems/CraftSystem.js"></script>
+    <script src="../js/main.js"></script>
+</body>
+</html>
