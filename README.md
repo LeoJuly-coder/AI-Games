@@ -83,7 +83,7 @@ AI-Game/
 ## 联系方式
 
 - 项目维护者：[Your Name] - [email@example.com]
-- 项目链接：https://github.com/yourusername/AI-Game
+- 项目链接：https://github.com/LeoJuly-coder/AI-Games
 
 ---
 
