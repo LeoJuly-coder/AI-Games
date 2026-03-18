@@ -33,7 +33,7 @@ AI-Game是一个集成人工智能技术的游戏项目，旨在探索AI在游�
 
 1. 克隆仓库：
    ```bash
-   git clone https://github.com/yourusername/AI-Game.git
+   git clone https://github.com/LeoJuly-coder/AI-Game.git
    cd AI-Game
    ```
 
