@@ -27,6 +27,12 @@ class CraftSystem {
         this.scene.inventorySystem.addItem(recipeKey, 1);
         this.scene.addLog(`制造了${recipe.name}`, 'success');
 
+        // 更新任务进度
+        this.scene.updateTaskProgress('craft', recipeKey);
+        
+        // 播放音效
+        this.scene.playSound('craft');
+
         return true;
     }
 }
