@@ -500,33 +500,136 @@ body {
     text-shadow: 2px 2px 0 rgba(0,0,0,0.1);
 }
 
-@media (max-width: 600px) {
-    .board {
-        grid-template-columns: repeat(8, 45px);
-        grid-template-rows: repeat(4, 45px);
+@media (max-width: 768px) {
+    body {
+        padding: 10px;
+        overflow-x: hidden;
     }
     
-    .cell {
-        width: 45px;
-        height: 45px;
-    }
-    
-    .piece {
-        width: 38px;
-        height: 38px;
-        font-size: 20px;
-    }
-    
-    .player-info {
-        gap: 15px;
-    }
-    
-    .player {
-        padding: 10px 20px;
-        min-width: 100px;
+    .game-container {
+        padding: 15px;
+        border-radius: 15px;
+        max-width: 100%;
     }
     
     .game-title {
-        font-size: 1.8rem;
+        font-size: 1.2rem;
+        margin-bottom: 10px;
+    }
+    
+    .top-controls {
+        top: 10px;
+        right: 10px;
+        gap: 8px;
+    }
+    
+    .action-btn {
+        width: 32px;
+        height: 32px;
+        font-size: 1rem;
+    }
+    
+    .main-content {
+        gap: 10px;
+    }
+    
+    .player {
+        padding: 8px 10px;
+        min-width: 60px;
+    }
+    
+    .player-avatar {
+        width: 35px;
+        height: 35px;
+        font-size: 1.2rem;
+    }
+    
+    .player-name {
+        font-size: 0.75rem;
+    }
+    
+    .captures-panel {
+        min-height: 180px;
+        padding: 8px;
+        min-width: 35px;
+    }
+    
+    .captured-piece {
+        width: 22px;
+        height: 22px;
+        font-size: 11px;
+    }
+    
+    .board-container {
+        padding: 10px;
+        border-radius: 10px;
+    }
+    
+    .board {
+        grid-template-columns: repeat(4, 42px);
+        grid-template-rows: repeat(8, 42px);
+        gap: 2px;
+    }
+    
+    .cell {
+        width: 42px;
+        height: 42px;
+    }
+    
+    .piece {
+        width: 36px;
+        height: 36px;
+        font-size: 18px;
+    }
+    
+    .game-status {
+        font-size: 0.85rem;
+        margin-bottom: 10px;
+    }
+    
+    .modal-content {
+        padding: 20px;
+        margin: 10px;
+        max-height: 80vh;
+        overflow-y: auto;
+    }
+    
+    .modal-content h2 {
+        font-size: 1.5rem;
+        margin-bottom: 20px;
+    }
+    
+    .modal-content p {
+        font-size: 0.9rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .board {
+        grid-template-columns: repeat(4, 38px);
+        grid-template-rows: repeat(8, 38px);
+    }
+    
+    .cell {
+        width: 38px;
+        height: 38px;
+    }
+    
+    .piece {
+        width: 32px;
+        height: 32px;
+        font-size: 16px;
+    }
+    
+    .captured-piece {
+        width: 20px;
+        height: 20px;
+        font-size: 10px;
+    }
+    
+    .captured-piece.has-badge::after {
+        width: 14px;
+        height: 14px;
+        font-size: 8px;
     }
 }
