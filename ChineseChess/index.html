@@ -13,12 +13,10 @@
             <button class="action-btn" id="rules-btn" title="游戏规则">?</button>
         </div>
         
-        <h1 class="game-title">象棋翻翻棋V0.1</h1>
-        
         <div class="main-content">
             <div class="player-1-panel">
                 <div class="player yellow" id="player-1">
-                    <div class="player-avatar">1</div>
+                    <div class="player-avatar">?</div>
                     <span class="player-name">玩家1</span>
                 </div>
                 <div class="captures-panel" id="captures-1"></div>
@@ -31,7 +29,7 @@
             <div class="player-2-panel">
                 <div class="captures-panel" id="captures-2"></div>
                 <div class="player yellow" id="player-2">
-                    <div class="player-avatar">2</div>
+                    <div class="player-avatar">?</div>
                     <span class="player-name">玩家2</span>
                 </div>
             </div>
@@ -44,28 +42,68 @@
         <div class="rules-modal" id="rules-modal" style="display: none;">
             <div class="modal-content">
                 <button class="close-btn" id="rules-close-btn">×</button>
+                <h1 class="game-title">象棋翻翻棋V0.1</h1>
                 <h2>游戏规则</h2>
                 <div class="rules-content">
-                    <h3>快速上手</h3>
-                    <ul>
-                        <li>棋盘棋子：使用半张象棋棋盘，32枚棋子打乱后背面朝上摆满棋格</li>
-                        <li>阵营确定：先手玩家翻第一枚棋，翻到什么颜色即执该方</li>
-                        <li>行动方式：每回合可选择翻一枚暗棋或移动一枚明棋</li>
-                    </ul>
-                    <h3>棋子大小顺序</h3>
-                    <p>將(不能吃卒) > 士 > 象 > 車 > 馬 > 炮(隔子吃) > 卒(吃將)</p>
-                    <h3>特殊规则</h3>
-                    <ul>
-                        <li>卒可吃将，将不能吃卒</li>
-                        <li>同级相遇同归于尽</li>
-                        <li>炮需隔子吃，可打任何棋子（包括暗棋）</li>
-                        <li>炮无吃子时可移动一格</li>
-                    </ul>
-                    <h3>棋子区别</h3>
-                    <p>红棋：帥、仕、相、兵</p>
-                    <p>黑棋：將、士、象、卒</p>
-                    <h3>胜负判定</h3>
-                    <p>吃光对方所有棋子即获胜</p>
+                    <div class="rule-section">
+                        <div class="rule-icon">🎮</div>
+                        <div class="rule-info">
+                            <h3>游戏目标</h3>
+                            <p>吃光对方所有棋子即可获胜</p>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-section">
+                        <div class="rule-icon">📋</div>
+                        <div class="rule-info">
+                            <h3>基本规则</h3>
+                            <ul>
+                                <li>使用半张象棋棋盘（4×8），32枚棋子打乱后背面朝上摆放</li>
+                                <li>先手翻第一枚棋，翻到什么颜色即执该方</li>
+                                <li>每回合可选择：翻一枚暗棋 或 移动一枚己方明棋</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-section">
+                        <div class="rule-icon">⚔️</div>
+                        <div class="rule-info">
+                            <h3>吃子顺序</h3>
+                            <div class="rank-list">
+                                <span class="rank-item">將 > 士 > 象 > 車 > 馬 > 炮 > 卒</span>
+                            </div>
+                            <p class="note">注：炮需隔子吃，可打任何棋子（包括暗棋）</p>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-section">
+                        <div class="rule-icon">💡</div>
+                        <div class="rule-info">
+                            <h3>特殊规则</h3>
+                            <ul>
+                                <li>卒可吃将，但将不能吃卒</li>
+                                <li>同级棋子相遇同归于尽</li>
+                                <li>炮无吃子时可移动一格</li>
+                            </ul>
+                        </div>
+                    </div>
+                    
+                    <div class="rule-section">
+                        <div class="rule-icon">🔴⚫</div>
+                        <div class="rule-info">
+                            <h3>棋子对应</h3>
+                            <div class="side-comparison">
+                                <div class="side-box red-side">
+                                    <span class="side-label">红方</span>
+                                    <span class="side-pieces">帥 · 仕 · 相 · 兵</span>
+                                </div>
+                                <div class="side-box black-side">
+                                    <span class="side-label">黑方</span>
+                                    <span class="side-pieces">將 · 士 · 象 · 卒</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>

@@ -212,9 +212,10 @@ class Game {
         if (this.firstFlip) {
             this.firstFlip = false;
             this.gameStarted = true;
-            this.playerColors[1] = piece.color;
-            this.playerColors[2] = piece.color === 'red' ? 'black' : 'red';
-            // 保持当前随机选中的玩家，不强制设为玩家1
+            const currentPlayer = this.currentPlayer;
+            const otherPlayer = currentPlayer === '1' ? '2' : '1';
+            this.playerColors[currentPlayer] = piece.color;
+            this.playerColors[otherPlayer] = piece.color === 'red' ? 'black' : 'red';
             this.updatePlayerColors();
         }
         // 翻棋就算行动了一步，切换到对方玩家
@@ -451,20 +452,30 @@ class Game {
     updatePlayerColors() {
         const player1 = document.getElementById('player-1');
         const player2 = document.getElementById('player-2');
+        const avatar1 = player1.querySelector('.player-avatar');
+        const avatar2 = player2.querySelector('.player-avatar');
         
         player1.classList.remove('yellow', 'red', 'black');
         player2.classList.remove('yellow', 'red', 'black');
         
         if (this.playerColors[1]) {
             player1.classList.add(this.playerColors[1]);
+            avatar1.textContent = this.playerColors[1] === 'red' ? '帥' : '將';
+            avatar1.classList.add(this.playerColors[1]);
         } else {
             player1.classList.add('yellow');
+            avatar1.textContent = '?';
+            avatar1.classList.remove('red', 'black');
         }
         
         if (this.playerColors[2]) {
             player2.classList.add(this.playerColors[2]);
+            avatar2.textContent = this.playerColors[2] === 'red' ? '帥' : '將';
+            avatar2.classList.add(this.playerColors[2]);
         } else {
             player2.classList.add('yellow');
+            avatar2.textContent = '?';
+            avatar2.classList.remove('red', 'black');
         }
     }
 
