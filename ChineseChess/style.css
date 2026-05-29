@@ -62,6 +62,11 @@ body {
     box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
+.player.yellow {
+    background: linear-gradient(145deg, #ffd700, #ffb700);
+    box-shadow: 0 5px 15px rgba(255, 215, 0, 0.4);
+}
+
 .player-name {
     font-size: 1.2rem;
     font-weight: bold;

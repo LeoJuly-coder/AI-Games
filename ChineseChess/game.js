@@ -14,12 +14,12 @@ const PIECE_TYPES = {
 class Game {
     constructor() {
         this.board = [];
-        this.currentPlayer = 'red';
+        this.currentPlayer = '1';
         this.selectedCell = null;
-        this.captures = { red: [], black: [] };
+        this.captures = { 1: [], 2: [] };
         this.gameStarted = false;
         this.firstFlip = true;
-        this.playerColors = { red: null, black: null };
+        this.playerColors = { 1: null, 2: null };
         this.init();
     }
 
@@ -176,12 +176,12 @@ class Game {
                     this.movePiece(selRow, selCol, row, col);
                 } else {
                     this.clearSelection();
-                    if (piece.color === this.currentPlayer) {
+                    if (this.playerColors[this.currentPlayer] === piece.color) {
                         this.selectPiece(row, col);
                     }
                 }
             } else {
-                if (piece.color === this.currentPlayer) {
+                if (this.playerColors[this.currentPlayer] === piece.color) {
                     this.selectPiece(row, col);
                 }
             }
@@ -199,11 +199,12 @@ class Game {
         if (this.firstFlip) {
             this.firstFlip = false;
             this.gameStarted = true;
-            this.playerColors.red = piece.color;
-            this.playerColors.black = piece.color === 'red' ? 'black' : 'red';
-            this.currentPlayer = piece.color;
+            this.playerColors[1] = piece.color;
+            this.playerColors[2] = piece.color === 'red' ? 'black' : 'red';
+            this.currentPlayer = '1';
             this.updatePlayerRepresent();
-            this.updateTurnIndicator('红方下棋');
+            this.updatePlayerColors();
+            this.updateTurnIndicator('玩家1下棋');
             this.updateStatus('游戏开始！点击己方棋子移动');
         } else {
             this.switchPlayer();
@@ -348,7 +349,8 @@ class Game {
 
         if (targetPiece) {
             if (isCannonCapture) {
-                this.captures[movingPiece.color].push(targetPiece.type);
+                const attackerPlayer = this.getPlayerByColor(movingPiece.color);
+                this.captures[attackerPlayer].push(targetPiece.type);
                 const targetCell = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"] .piece`);
                 if (targetCell) targetCell.classList.add('captured');
             } else {
@@ -371,21 +373,29 @@ class Game {
 
     handleCapture(attacker, defender, defRow, defCol) {
         const result = this.comparePieces(attacker.type, defender.type, attacker.color, defender.color);
+        const attackerPlayer = this.getPlayerByColor(attacker.color);
+        const defenderPlayer = this.getPlayerByColor(defender.color);
 
         if (result === 'attacker_wins') {
-            this.captures[attacker.color].push(defender.type);
+            this.captures[attackerPlayer].push(defender.type);
             const targetCell = document.querySelector(`[data-row="${defRow}"][data-col="${defCol}"] .piece`);
             if (targetCell) targetCell.classList.add('captured');
             return false;
         } else if (result === 'defender_wins') {
-            this.captures[defender.color].push(attacker.type);
+            this.captures[defenderPlayer].push(attacker.type);
             return true;
         } else {
-            this.captures[attacker.color].push(defender.type);
-            this.captures[defender.color].push(attacker.type);
+            this.captures[attackerPlayer].push(defender.type);
+            this.captures[defenderPlayer].push(attacker.type);
             this.board[defRow][defCol] = null;
             return true;
         }
+    }
+
+    getPlayerByColor(color) {
+        if (this.playerColors[1] === color) return '1';
+        if (this.playerColors[2] === color) return '2';
+        return null;
     }
 
     comparePieces(attackerType, defenderType) {
@@ -417,18 +427,41 @@ class Game {
     }
 
     switchPlayer() {
-        this.currentPlayer = this.currentPlayer === 'red' ? 'black' : 'red';
-        const playerName = this.playerColors[this.currentPlayer] === 'red' ? '红方' : '黑方';
-        this.updateTurnIndicator(`${playerName}下棋`);
+        this.currentPlayer = this.currentPlayer === '1' ? '2' : '1';
+        this.updateTurnIndicator(`玩家${this.currentPlayer}下棋`);
         this.updateStatus('点击己方棋子移动或翻暗棋');
     }
 
     updatePlayerRepresent() {
-        const redRepresent = document.getElementById('represent-red');
-        const blackRepresent = document.getElementById('represent-black');
+        const represent1 = document.getElementById('represent-1');
+        const represent2 = document.getElementById('represent-2');
         
-        redRepresent.textContent = `代表${this.playerColors.red === 'red' ? '红' : '黑'}棋`;
-        blackRepresent.textContent = `代表${this.playerColors.black === 'red' ? '红' : '黑'}棋`;
+        if (this.playerColors[1]) {
+            represent1.textContent = `代表${this.playerColors[1] === 'red' ? '红' : '黑'}棋`;
+        }
+        if (this.playerColors[2]) {
+            represent2.textContent = `代表${this.playerColors[2] === 'red' ? '红' : '黑'}棋`;
+        }
+    }
+
+    updatePlayerColors() {
+        const player1 = document.getElementById('player-1');
+        const player2 = document.getElementById('player-2');
+        
+        player1.classList.remove('yellow', 'red', 'black');
+        player2.classList.remove('yellow', 'red', 'black');
+        
+        if (this.playerColors[1]) {
+            player1.classList.add(this.playerColors[1]);
+        } else {
+            player1.classList.add('yellow');
+        }
+        
+        if (this.playerColors[2]) {
+            player2.classList.add(this.playerColors[2]);
+        } else {
+            player2.classList.add('yellow');
+        }
     }
 
     clearSelection() {
@@ -466,36 +499,37 @@ class Game {
         }
 
         if (redCount === 0) {
-            this.endGame('black');
+            const winner = this.playerColors[1] === 'black' ? '1' : '2';
+            this.endGame(winner);
             return true;
         }
         if (blackCount === 0) {
-            this.endGame('red');
+            const winner = this.playerColors[1] === 'red' ? '1' : '2';
+            this.endGame(winner);
             return true;
         }
 
         return false;
     }
 
-    endGame(winnerColor) {
-        const winnerName = this.playerColors[winnerColor] === 'red' ? '红方' : '黑方';
-        document.getElementById('winner-text').textContent = `${winnerName}获胜！`;
+    endGame(winner) {
+        document.getElementById('winner-text').textContent = `玩家${winner}获胜！`;
         document.getElementById('game-over-modal').style.display = 'flex';
     }
 
     updateCaptures() {
-        const redCaptures = document.getElementById('captures-red');
-        const blackCaptures = document.getElementById('captures-black');
+        const captures1 = document.getElementById('captures-1');
+        const captures2 = document.getElementById('captures-2');
 
-        const redCapturesHtml = this.captures.red.map(type => 
+        const captures1Html = this.captures[1].map(type => 
             `<span class="captured-piece">${PIECE_TYPES[type].symbol}</span>`
         ).join('');
-        const blackCapturesHtml = this.captures.black.map(type => 
+        const captures2Html = this.captures[2].map(type => 
             `<span class="captured-piece">${PIECE_TYPES[type].symbol}</span>`
         ).join('');
 
-        redCaptures.innerHTML = redCapturesHtml || '<span class="no-captures">无</span>';
-        blackCaptures.innerHTML = blackCapturesHtml || '<span class="no-captures">无</span>';
+        captures1.innerHTML = captures1Html || '<span class="no-captures">无</span>';
+        captures2.innerHTML = captures2Html || '<span class="no-captures">无</span>';
     }
 
     updateStatus(text) {
