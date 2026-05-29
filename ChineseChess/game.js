@@ -1,14 +1,14 @@
-const ROWS = 4;
-const COLS = 8;
+const ROWS = 8;
+const COLS = 4;
 
 const PIECE_TYPES = {
-    KING: { name: '將', rank: 1, symbol: '將' },
-    GUARD: { name: '士', rank: 2, symbol: '士' },
-    ELEPHANT: { name: '象', rank: 3, symbol: '象' },
-    CHARIOT: { name: '車', rank: 4, symbol: '車' },
-    HORSE: { name: '馬', rank: 5, symbol: '馬' },
-    CANNON: { name: '炮', rank: 6, symbol: '炮' },
-    SOLDIER: { name: '卒', rank: 7, symbol: '卒' }
+    KING: { name: '將', rank: 1, redSymbol: '帥', blackSymbol: '將' },
+    GUARD: { name: '士', rank: 2, redSymbol: '仕', blackSymbol: '士' },
+    ELEPHANT: { name: '象', rank: 3, redSymbol: '相', blackSymbol: '象' },
+    CHARIOT: { name: '車', rank: 4, redSymbol: '車', blackSymbol: '車' },
+    HORSE: { name: '馬', rank: 5, redSymbol: '馬', blackSymbol: '馬' },
+    CANNON: { name: '炮', rank: 6, redSymbol: '炮', blackSymbol: '炮' },
+    SOLDIER: { name: '卒', rank: 7, redSymbol: '兵', blackSymbol: '卒' }
 };
 
 class Game {
@@ -27,8 +27,12 @@ class Game {
         this.createBoard();
         this.renderBoard();
         this.bindEvents();
-        this.updateStatus('点击任意暗棋开始游戏');
-        this.updateTurnIndicator('等待开局');
+        // 初始化棋子追踪系统
+        this.updateCaptures();
+        // 随机选择一方玩家开始行动
+        this.currentPlayer = Math.random() < 0.5 ? '1' : '2';
+        this.updateActivePlayer();
+        this.updateStatus(`玩家${this.currentPlayer}先行动，点击任意暗棋开始游戏`);
     }
 
     createBoard() {
@@ -110,7 +114,8 @@ class Game {
                 if (piece) {
                     const pieceElement = document.createElement('div');
                     pieceElement.className = `piece ${piece.revealed ? piece.color : 'dark-side'}`;
-                    pieceElement.textContent = piece.revealed ? PIECE_TYPES[piece.type].symbol : '?';
+                    const typeInfo = PIECE_TYPES[piece.type];
+                    pieceElement.textContent = piece.revealed ? (piece.color === 'red' ? typeInfo.redSymbol : typeInfo.blackSymbol) : '?';
                     cell.appendChild(pieceElement);
                 }
 
@@ -132,6 +137,14 @@ class Game {
         document.getElementById('modal-restart-btn').addEventListener('click', () => {
             document.getElementById('game-over-modal').style.display = 'none';
             this.restart();
+        });
+        
+        document.getElementById('rules-btn').addEventListener('click', () => {
+            document.getElementById('rules-modal').style.display = 'flex';
+        });
+        
+        document.getElementById('rules-close-btn').addEventListener('click', () => {
+            document.getElementById('rules-modal').style.display = 'none';
         });
     }
 
@@ -176,12 +189,12 @@ class Game {
                     this.movePiece(selRow, selCol, row, col);
                 } else {
                     this.clearSelection();
-                    if (this.playerColors[this.currentPlayer] === piece.color) {
+                    if (piece.color === this.playerColors[this.currentPlayer]) {
                         this.selectPiece(row, col);
                     }
                 }
             } else {
-                if (this.playerColors[this.currentPlayer] === piece.color) {
+                if (piece.color === this.playerColors[this.currentPlayer]) {
                     this.selectPiece(row, col);
                 }
             }
@@ -201,21 +214,19 @@ class Game {
             this.gameStarted = true;
             this.playerColors[1] = piece.color;
             this.playerColors[2] = piece.color === 'red' ? 'black' : 'red';
-            this.currentPlayer = '1';
-            this.updatePlayerRepresent();
+            // 保持当前随机选中的玩家，不强制设为玩家1
             this.updatePlayerColors();
-            this.updateTurnIndicator('玩家1下棋');
-            this.updateStatus('游戏开始！点击己方棋子移动');
-        } else {
-            this.switchPlayer();
         }
+        // 翻棋就算行动了一步，切换到对方玩家
+        this.switchPlayer();
 
         const pieceElement = document.querySelector(`[data-row="${row}"][data-col="${col}"] .piece`);
         pieceElement.classList.add('flipping');
         setTimeout(() => {
             pieceElement.classList.remove('flipping');
             pieceElement.className = `piece ${piece.color}`;
-            pieceElement.textContent = PIECE_TYPES[piece.type].symbol;
+            const typeInfo = PIECE_TYPES[piece.type];
+            pieceElement.textContent = piece.color === 'red' ? typeInfo.redSymbol : typeInfo.blackSymbol;
         }, 500);
 
         this.checkWin();
@@ -300,11 +311,6 @@ class Game {
                     const targetPiece = this.board[newRow][newCol];
                     if (!targetPiece) {
                         moves.push([newRow, newCol, false]);
-                    } else if (targetPiece.color !== piece.color && targetPiece.revealed) {
-                        const result = this.comparePieces(piece.type, targetPiece.type);
-                        if (result !== 'defender_wins') {
-                            moves.push([newRow, newCol, true]);
-                        }
                     }
                 }
             });
@@ -349,10 +355,17 @@ class Game {
 
         if (targetPiece) {
             if (isCannonCapture) {
-                const attackerPlayer = this.getPlayerByColor(movingPiece.color);
-                this.captures[attackerPlayer].push(targetPiece.type);
+                const movingPlayer = this.getPlayerByColor(movingPiece.color);
+                // 如果炮打的是暗棋，且暗棋的颜色与炮的所有者相同，则被吃的棋进入对手的池子
+                if (!targetPiece.revealed && targetPiece.color === movingPiece.color) {
+                    const opponentPlayer = movingPlayer === '1' ? '2' : '1';
+                    this.captures[opponentPlayer].push({ type: targetPiece.type, color: targetPiece.color });
+                } else {
+                    this.captures[movingPlayer].push({ type: targetPiece.type, color: targetPiece.color });
+                }
                 const targetCell = document.querySelector(`[data-row="${toRow}"][data-col="${toCol}"] .piece`);
                 if (targetCell) targetCell.classList.add('captured');
+                this.updateCaptures();
             } else {
                 attackerCaptured = this.handleCapture(movingPiece, targetPiece, toRow, toCol);
             }
@@ -371,31 +384,34 @@ class Game {
         }
     }
 
+    getPlayerByColor(color) {
+        if (this.playerColors[1] === color) return '1';
+        if (this.playerColors[2] === color) return '2';
+        return null;
+    }
+
     handleCapture(attacker, defender, defRow, defCol) {
         const result = this.comparePieces(attacker.type, defender.type, attacker.color, defender.color);
         const attackerPlayer = this.getPlayerByColor(attacker.color);
         const defenderPlayer = this.getPlayerByColor(defender.color);
 
         if (result === 'attacker_wins') {
-            this.captures[attackerPlayer].push(defender.type);
+            this.captures[attackerPlayer].push({ type: defender.type, color: defender.color });
             const targetCell = document.querySelector(`[data-row="${defRow}"][data-col="${defCol}"] .piece`);
             if (targetCell) targetCell.classList.add('captured');
+            this.updateCaptures();
             return false;
         } else if (result === 'defender_wins') {
-            this.captures[defenderPlayer].push(attacker.type);
+            this.captures[defenderPlayer].push({ type: attacker.type, color: attacker.color });
+            this.updateCaptures();
             return true;
         } else {
-            this.captures[attackerPlayer].push(defender.type);
-            this.captures[defenderPlayer].push(attacker.type);
+            this.captures[attackerPlayer].push({ type: defender.type, color: defender.color });
+            this.captures[defenderPlayer].push({ type: attacker.type, color: attacker.color });
             this.board[defRow][defCol] = null;
+            this.updateCaptures();
             return true;
         }
-    }
-
-    getPlayerByColor(color) {
-        if (this.playerColors[1] === color) return '1';
-        if (this.playerColors[2] === color) return '2';
-        return null;
     }
 
     comparePieces(attackerType, defenderType) {
@@ -428,20 +444,8 @@ class Game {
 
     switchPlayer() {
         this.currentPlayer = this.currentPlayer === '1' ? '2' : '1';
-        this.updateTurnIndicator(`玩家${this.currentPlayer}下棋`);
         this.updateStatus('点击己方棋子移动或翻暗棋');
-    }
-
-    updatePlayerRepresent() {
-        const represent1 = document.getElementById('represent-1');
-        const represent2 = document.getElementById('represent-2');
-        
-        if (this.playerColors[1]) {
-            represent1.textContent = `代表${this.playerColors[1] === 'red' ? '红' : '黑'}棋`;
-        }
-        if (this.playerColors[2]) {
-            represent2.textContent = `代表${this.playerColors[2] === 'red' ? '红' : '黑'}棋`;
-        }
+        this.updateActivePlayer();
     }
 
     updatePlayerColors() {
@@ -462,6 +466,17 @@ class Game {
         } else {
             player2.classList.add('yellow');
         }
+    }
+
+    updateActivePlayer() {
+        const player1 = document.getElementById('player-1');
+        const player2 = document.getElementById('player-2');
+        
+        player1.classList.remove('active');
+        player2.classList.remove('active');
+        
+        const activePlayer = document.getElementById(`player-${this.currentPlayer}`);
+        activePlayer.classList.add('active');
     }
 
     clearSelection() {
@@ -521,15 +536,71 @@ class Game {
         const captures1 = document.getElementById('captures-1');
         const captures2 = document.getElementById('captures-2');
 
-        const captures1Html = this.captures[1].map(type => 
-            `<span class="captured-piece">${PIECE_TYPES[type].symbol}</span>`
-        ).join('');
-        const captures2Html = this.captures[2].map(type => 
-            `<span class="captured-piece">${PIECE_TYPES[type].symbol}</span>`
-        ).join('');
+        // 统计被吃掉的棋子数量
+        const countCaptures = (player) => {
+            const counts = {};
+            this.captures[player].forEach(captured => {
+                const key = `${captured.type}-${captured.color}`;
+                counts[key] = (counts[key] || 0) + 1;
+            });
+            return counts;
+        };
 
-        captures1.innerHTML = captures1Html || '<span class="no-captures">无</span>';
-        captures2.innerHTML = captures2Html || '<span class="no-captures">无</span>';
+        const player1Captures = countCaptures(1);
+        const player2Captures = countCaptures(2);
+
+        // 按rank顺序定义棋子显示顺序
+        const pieceOrder = ['KING', 'GUARD', 'ELEPHANT', 'CHARIOT', 'HORSE', 'CANNON', 'SOLDIER'];
+        // 玩家2的顺序反转，实现对称显示
+        const pieceOrderReversed = ['SOLDIER', 'CANNON', 'HORSE', 'CHARIOT', 'ELEPHANT', 'GUARD', 'KING'];
+
+        // 生成被吃掉棋子的HTML（每个格子固定对应一个棋子类型）
+        const generateCapturesHtml = (captures, order) => {
+            let html = '';
+            
+            // 每个格子固定对应一个棋子类型
+            for (const type of order) {
+                // 检查红方和黑方是否被吃（优先显示红方）
+                const redKey = `${type}-red`;
+                const blackKey = `${type}-black`;
+                const redCount = captures[redKey] || 0;
+                const blackCount = captures[blackKey] || 0;
+                
+                if (redCount > 0) {
+                    const typeInfo = PIECE_TYPES[type];
+                    const symbol = typeInfo.redSymbol;
+                    let className = `captured-piece red`;
+                    let dataCount = '';
+                    
+                    if (redCount > 1) {
+                        className += ' has-badge';
+                        dataCount = `data-count="${redCount}"`;
+                    }
+                    
+                    html += `<span class="${className}" ${dataCount}>${symbol}</span>`;
+                } else if (blackCount > 0) {
+                    const typeInfo = PIECE_TYPES[type];
+                    const symbol = typeInfo.blackSymbol;
+                    let className = `captured-piece black`;
+                    let dataCount = '';
+                    
+                    if (blackCount > 1) {
+                        className += ' has-badge';
+                        dataCount = `data-count="${blackCount}"`;
+                    }
+                    
+                    html += `<span class="${className}" ${dataCount}>${symbol}</span>`;
+                } else {
+                    // 该类型棋子未被吃，显示空占位格子
+                    html += '<span class="captured-piece empty"></span>';
+                }
+            }
+            
+            return html;
+        };
+
+        captures1.innerHTML = generateCapturesHtml(player1Captures, pieceOrder);
+        captures2.innerHTML = generateCapturesHtml(player2Captures, pieceOrderReversed);
     }
 
     updateStatus(text) {
@@ -537,19 +608,14 @@ class Game {
         statusElement.innerHTML = `<p>${text}</p>`;
     }
 
-    updateTurnIndicator(text) {
-        const indicator = document.getElementById('turn-indicator');
-        indicator.textContent = text;
-    }
-
     restart() {
         this.board = [];
-        this.currentPlayer = 'red';
+        this.currentPlayer = '1';
         this.selectedCell = null;
-        this.captures = { red: [], black: [] };
+        this.captures = { 1: [], 2: [] };
         this.gameStarted = false;
         this.firstFlip = true;
-        this.playerColors = { red: null, black: null };
+        this.playerColors = { 1: null, 2: null };
         this.init();
     }
 }
